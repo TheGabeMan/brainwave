@@ -1,0 +1,3 @@
+Email can now go through your phone's mail app as well as SMTP. Pick it in Settings under Sending email: Brainwave opens your mail app with the message and recording filled in, and you tap Send. No password or server details needed. SMTP is still the default.
+
+Also: a fix for a crash in the release build when transcribing speech, and the app is now about 12 MB because the speech model is downloaded the first time you use it.
