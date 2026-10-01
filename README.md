@@ -20,9 +20,9 @@ FOSS-clean so an F-Droid submission later is packaging work, not a rewrite.
 | **Languages** | English and Dutch, picked in Settings. One setting drives three things: which speech model loads, which phrasings the date parser looks for, and which voice answers you. |
 | **Missing due date** | The app asks *"When is this due?"* / *"Wanneer moet dit af zijn?"* out loud and immediately listens for the answer, then parses it. Skippable, and there is a date picker on the review screen either way. |
 | **Typing instead** | "Type instead" on the recording screen goes straight to a text editor. |
-| **Email** | On save: subject `[brainwave] <title>`, body with the text and due date, the `.m4a` recording attached. |
+| **Email** | Subject `[brainwave] <title>`, the text and due date in the body, the `.m4a` recording attached. Sent one of two ways, chosen in Settings: **SMTP** (the default) sends it itself in the background, fully automatically; **Mail app** opens your phone's mail app with everything filled in and you tap Send — no password or server details needed. |
 | **Calendar** | Each brainwave with a due date is written **straight into the phone's calendar** — no email involved. Timed entries get a reminder; day-only ones are all-day events. Editing the brainwave updates the entry, completing or deleting it removes it. If the phone has several calendars the app asks which once and never guesses (see *Calendar* below). |
-| **Whole list** | The inbox icon in the top bar emails your entire list as one message, plain text and HTML. |
+| **Whole list** | The inbox icon in the top bar emails your entire list as one message — in the background over SMTP, or through the mail app. |
 | **Swipes** | Swipe **left** to complete. Swipe **right** to delete, with an undo snackbar. |
 | **Editing** | Tap a brainwave to edit title, text and due date, play the recording back, or re-send the email. |
 | **Reminders** | A local notification at the due moment (or N minutes before), rescheduled after a reboot. |
@@ -36,7 +36,7 @@ ai/            VoskTranscriber · CloudTranscriber · SpeechToTextRouter
                DueDateParser · TitleGenerator · ClaudeClient
 audio/         AudioRecorder · PcmDecoder · LinearResampler · AudioPlayer
                Speaker (TTS) · HeadsetAudioRouter
-mail/          MailComposer · SmtpMailer
+mail/          MailComposer · SmtpMailer · MailHandoff (the mail-app route) · AttachmentStaging
 calendar/      CalendarWriter (CalendarContract — a platform API, no Google libraries)
 work/          WorkManager jobs for the three kinds of mail
 reminder/      AlarmManager scheduling, notification, boot re-registration
@@ -150,9 +150,15 @@ mishear things ("overmorgen" → "vanmorgen") that no parser can repair.
 ### Configure (Settings screen)
 
 1. **Recipient email** — where everything is sent.
-2. **SMTP** — host, security, port, username, password. With Gmail use
-   `smtp.gmail.com`, STARTTLS on 587, and an **app password**, not your account
-   password. Hit *Send test email* before trusting it.
+2. **Sending email** — pick how mail leaves the phone:
+   - **SMTP** (the default) — fully automatic, in the background. Needs host, security,
+     port, username and password. With Gmail use `smtp.gmail.com`, STARTTLS on 587, and
+     an **app password**, not your account password. Hit *Send test email* before
+     trusting it.
+   - **Mail app** — Brainwave opens your mail app with the message and recording
+     filled in, and you tap Send. Nothing else to set up. It is one tap per email, and
+     nothing goes out until you tap, so it is also not background-capable. *Open mail
+     app with a test message* shows what it will do.
 3. **Spoken language** — English or Dutch. Speech recognition runs on the phone,
    free and offline, from a model the app downloads **once** (about 40 MB per
    language, SHA-256-verified; it asks before downloading, and your recording is

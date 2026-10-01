@@ -3,6 +3,8 @@ package dev.gabrie.brainwave
 import dev.gabrie.brainwave.calendar.CalendarWriter
 import dev.gabrie.brainwave.data.Brainwave
 import dev.gabrie.brainwave.data.BrainwaveRepository
+import dev.gabrie.brainwave.mail.MailComposer
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.reminder.ReminderScheduler
 import dev.gabrie.brainwave.settings.AppSettings
 import dev.gabrie.brainwave.settings.SettingsRepository
@@ -40,7 +42,7 @@ class BrainwaveCoordinator(
 
         reminders.schedule(saved, settings)
         syncCalendar(saved, settings)
-        if (settings.mailConfigured) mail.sendNote(id)
+        if (settings.sendsAutomatically) mail.sendNote(id)
         return id
     }
 
@@ -59,7 +61,7 @@ class BrainwaveCoordinator(
 
         reminders.schedule(current, settings)
         syncCalendar(current, settings)
-        if (resendNote && settings.mailConfigured) mail.sendNote(id)
+        if (resendNote && settings.sendsAutomatically) mail.sendNote(id)
     }
 
     suspend fun setCompleted(id: Long, completed: Boolean) {
@@ -125,6 +127,27 @@ class BrainwaveCoordinator(
     }
 
     fun sendWholeList() = mail.sendList()
+
+    /**
+     * The note mail for [id] as a hand-off to the mail app, or null when mail goes
+     * by SMTP (the background worker already has it) or there is no recipient.
+     *
+     * Hand-off is the caller's job to launch, because only a foreground screen
+     * can open another app; the coordinator just says what to send.
+     */
+    suspend fun noteHandoff(id: Long): MailHandoff.Request? {
+        val settings = settingsRepository.current()
+        if (!settings.handsOffToMailApp) return null
+        val brainwave = repository.find(id) ?: return null
+        return MailHandoff.Request(MailComposer.note(brainwave, settings), settings.recipientEmail)
+    }
+
+    /** The whole-list mail as a hand-off, under the same rules as [noteHandoff]. */
+    suspend fun listHandoff(): MailHandoff.Request? {
+        val settings = settingsRepository.current()
+        if (!settings.handsOffToMailApp) return null
+        return MailHandoff.Request(MailComposer.list(repository.allOnce()), settings.recipientEmail)
+    }
 
     /**
      * Makes the calendar match [brainwave]: an entry when it has a due date and

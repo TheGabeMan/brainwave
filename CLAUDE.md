@@ -32,7 +32,7 @@ repository or the APK — the app downloads them on first use (see below).
 ```
 
 ```bash
-./gradlew :app:testDebugUnitTest # the 110 unit tests
+./gradlew :app:testDebugUnitTest # the 123 unit tests
 ```
 
 ```bash
@@ -67,7 +67,7 @@ ai/         VoskTranscriber · CloudTranscriber · SpeechToTextRouter
             DueDateParser · TitleGenerator · ClaudeClient
 audio/      AudioRecorder · PcmDecoder · LinearResampler · AudioPlayer
             Speaker (TTS) · HeadsetAudioRouter
-mail/       MailComposer · SmtpMailer
+mail/       MailComposer · SmtpMailer · MailHandoff · AttachmentStaging
 calendar/   CalendarWriter — writes entries via CalendarContract
 work/       WorkManager jobs for the three kinds of mail
 reminder/   AlarmManager scheduling, notifications, boot re-registration
@@ -136,6 +136,17 @@ Each of these cost real time. Do not re-litigate them.
   change, check `app/build/outputs/mapping/release/mapping.txt` for renamed library classes,
   and **run the release APK on a device before telling anyone it works** — a release build
   that has only ever compiled has not been tested.
+- **A MIME type does not make a share sheet email-only.** The mail-app route first used
+  `ACTION_SEND` + `message/rfc822`, and a device showed the full share sheet — Signal
+  contacts, WhatsApp, Telegram, Quick Share — because those apps accept any file type. A
+  private note could go to a chat contact by accident. `MailHandoff` sets an intent
+  **selector** (`ACTION_SENDTO mailto:`) so only mail apps match. And **do not also set
+  `type`**: with a selector it makes the intent unresolvable (`START_INTENT_NOT_RESOLVED`,
+  result code −91 in logcat, and the Toast is easy to miss). None of this can be
+  unit-tested; it was found by running the release app on a phone.
+- **There is no silent send through another app on Android.** The mail-app route can only
+  *open* the mail app, so it must be launched from a foreground screen (`MailHandoff.launch`
+  from a composable), never from a worker. SMTP is the only background route.
 - **JavaMail on Android needs `JavaMailInit.ensure()`** before the first message,
   or multipart fails at runtime with "no object DCH for MIME type".
 - **Do not weaken the JavaMail ProGuard rules.** R8 will strip the reflectively

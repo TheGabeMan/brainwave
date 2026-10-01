@@ -13,6 +13,7 @@ import dev.gabrie.brainwave.audio.AudioRecorder
 import dev.gabrie.brainwave.audio.HeadsetAudioRouter
 import dev.gabrie.brainwave.audio.Speaker
 import dev.gabrie.brainwave.data.Brainwave
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.ai.ModelStatus
 import dev.gabrie.brainwave.settings.NoteLanguage
 import dev.gabrie.brainwave.settings.SecretStore
@@ -66,6 +67,8 @@ data class RecordUiState(
     val modelSizeMegabytes: Int = 0,
     /** 0..1 while the model for [language] is downloading, else null. */
     val modelProgress: Float? = null,
+    /** Set once saved, when mail should go through the mail app: the screen opens it. */
+    val handoff: MailHandoff.Request? = null,
 ) {
     val dueLabel: String
         get() = dueAt?.let { Time.formatDue(Time.toMillis(it), hasTime) } ?: "No due date"
@@ -424,7 +427,7 @@ class RecordViewModel(
             }
 
             _uiState.update { it.copy(saving = true) }
-            container.coordinator.create(
+            val id = container.coordinator.create(
                 Brainwave(
                     title = title,
                     body = body,
@@ -433,7 +436,8 @@ class RecordViewModel(
                     dueHasTime = state.hasTime,
                 )
             )
-            _uiState.update { it.copy(saving = false, saved = true) }
+            val handoff = container.coordinator.noteHandoff(id)
+            _uiState.update { it.copy(saving = false, saved = true, handoff = handoff) }
         }
     }
 

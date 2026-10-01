@@ -12,6 +12,9 @@ enum class SmtpSecurity { STARTTLS, SSL, NONE }
 data class AppSettings(
     val recipientEmail: String = "",
 
+    /** How mail leaves the phone. SMTP — automatic, in the background — is the default. */
+    val mailMethod: MailMethod = MailMethod.SMTP,
+
     val smtpHost: String = "",
     val smtpPort: Int = 587,
     val smtpSecurity: SmtpSecurity = SmtpSecurity.STARTTLS,
@@ -55,8 +58,21 @@ data class AppSettings(
 
     val effectiveFrom: String get() = fromAddress.ifBlank { smtpUsername }
 
+    /** The SMTP details are complete. Says nothing about which method is chosen. */
     val mailConfigured: Boolean
         get() = smtpHost.isNotBlank() && recipientEmail.isNotBlank() && effectiveFrom.isNotBlank()
+
+    /** The app can send mail by itself, with nobody tapping anything. */
+    val sendsAutomatically: Boolean
+        get() = mailMethod == MailMethod.SMTP && mailConfigured
+
+    /** Mail goes through the phone's mail app, and there is an address to put in it. */
+    val handsOffToMailApp: Boolean
+        get() = mailMethod == MailMethod.MAIL_APP && recipientEmail.isNotBlank()
+
+    /** Emailing works at all with the current settings. */
+    val canEmail: Boolean
+        get() = sendsAutomatically || handsOffToMailApp
 
     val usesCloudSpeech: Boolean get() = speechEngine == SpeechEngine.CLOUD
 

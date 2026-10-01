@@ -1,6 +1,6 @@
 # Installing Brainwave on your phone · Brainwave installeren
 
-Android only. It takes about five minutes, most of it the first-time email setup.
+Android only. It takes about five minutes, most of it the first-time email setup (one tap, if you choose the Mail app).
 *Alleen Android. Het kost ongeveer vijf minuten, het meeste daarvan is het instellen van e-mail.*
 
 ---
@@ -26,15 +26,22 @@ Android only. It takes about five minutes, most of it the first-time email setup
 
 ### 3. Set up email (once)
 
-Open **Settings** (the gear, top right).
+Open **Settings** (the gear, top right) and fill in **Recipient email** — where your brainwaves are sent,
+usually your own address. Then choose **how** under **Sending email**:
 
-- **Recipient email** — where your brainwaves are sent. Usually your own address.
-- **Outgoing mail (SMTP)** — this is the one fiddly step. For **Gmail**:
+**Mail app — the easy way.** Tap **Mail app**. That is all. Each time you save a brainwave, your
+mail app opens with the message and the recording already filled in; tap **Send**. Press
+**Open mail app with a test message** to see it. (Brainwave only offers email apps, never chat apps.)
+
+**SMTP — automatic, but fiddly.** Sends in the background with no tap, but needs your mail account's
+details. For **Gmail**:
   - Host `smtp.gmail.com`, security **STARTTLS**, port `587`.
   - Username: your full Gmail address.
   - Password: **not** your normal password but an **app password**. Create one at
     <https://myaccount.google.com/apppasswords> (needs 2-step verification switched on).
   - Press **Send test email**. If it arrives, you are done.
+
+SMTP is what Brainwave starts with, so if you want the easy way, switch to **Mail app**.
 
 ### 4. Updates
 
@@ -64,15 +71,22 @@ install over the old one — your brainwaves are kept.
 
 ### 3. E-mail instellen (eenmalig)
 
-Open **Settings** (het tandwiel rechtsboven).
+Open **Settings** (het tandwiel rechtsboven) en vul **Recipient email** in — waar je brainwaves naartoe gaan,
+meestal je eigen adres. Kies daarna onder **Sending email** **hoe** de mail wordt verstuurd:
 
-- **Recipient email** — waar je brainwaves naartoe gaan. Meestal je eigen adres.
-- **Outgoing mail (SMTP)** — dit is de lastigste stap. Voor **Gmail**:
+**Mail app — de makkelijke manier.** Tik op **Mail app**. Meer is het niet. Telkens als je een brainwave
+bewaart, opent je mailapp met het bericht en de opname al ingevuld; tik op **Verzenden**. Met
+**Open mail app with a test message** zie je hoe het werkt. (Brainwave toont alleen mailapps, nooit chatapps.)
+
+**SMTP — automatisch, maar lastig.** Verstuurt op de achtergrond zonder tik, maar heeft de gegevens van je
+mailaccount nodig. Voor **Gmail**:
   - Host `smtp.gmail.com`, beveiliging **STARTTLS**, poort `587`.
   - Gebruikersnaam: je volledige Gmail-adres.
   - Wachtwoord: **niet** je gewone wachtwoord maar een **app-wachtwoord**. Maak er een op
     <https://myaccount.google.com/apppasswords> (tweestapsverificatie moet aanstaan).
   - Tik op **Send test email**. Komt die aan, dan ben je klaar.
+
+Brainwave begint met SMTP, dus wil je de makkelijke manier, schakel dan over naar **Mail app**.
 
 ### 4. Updates
 

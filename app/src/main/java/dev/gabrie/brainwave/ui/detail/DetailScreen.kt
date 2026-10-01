@@ -39,9 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.ui.components.DueDateSection
 import dev.gabrie.brainwave.ui.components.rememberCalendarActions
 import dev.gabrie.brainwave.util.Time
@@ -61,8 +63,14 @@ fun DetailScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     val calendar = rememberCalendarActions()
 
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.messageFlow.collect { snackbarHostState.showSnackbar(it) }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.handoffFlow.collect { request ->
+            if (!MailHandoff.launch(context, request)) snackbarHostState.showSnackbar("No mail app found on this phone.")
+        }
     }
     LaunchedEffect(state.closed, state.missing) {
         if (state.closed || state.missing) onBack()

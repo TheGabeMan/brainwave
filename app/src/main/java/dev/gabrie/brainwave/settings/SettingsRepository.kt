@@ -19,6 +19,7 @@ class SettingsRepository(private val context: Context) {
     val settings: Flow<AppSettings> = context.settingsDataStore.data.map { p ->
         AppSettings(
             recipientEmail = p[RECIPIENT] ?: "",
+            mailMethod = p[MAIL_METHOD]?.let { runCatching { MailMethod.valueOf(it) }.getOrNull() } ?: MailMethod.SMTP,
             smtpHost = p[SMTP_HOST] ?: "",
             smtpPort = p[SMTP_PORT] ?: 587,
             smtpSecurity = p[SMTP_SECURITY]?.let { runCatching { SmtpSecurity.valueOf(it) }.getOrNull() }
@@ -52,6 +53,7 @@ class SettingsRepository(private val context: Context) {
         val next = transform(current())
         context.settingsDataStore.edit { p ->
             p[RECIPIENT] = next.recipientEmail
+            p[MAIL_METHOD] = next.mailMethod.name
             p[SMTP_HOST] = next.smtpHost
             p[SMTP_PORT] = next.smtpPort
             p[SMTP_SECURITY] = next.smtpSecurity.name
@@ -78,6 +80,7 @@ class SettingsRepository(private val context: Context) {
 
     private companion object {
         val RECIPIENT = stringPreferencesKey("recipient_email")
+        val MAIL_METHOD = stringPreferencesKey("mail_method")
         val SMTP_HOST = stringPreferencesKey("smtp_host")
         val SMTP_PORT = intPreferencesKey("smtp_port")
         val SMTP_SECURITY = stringPreferencesKey("smtp_security")

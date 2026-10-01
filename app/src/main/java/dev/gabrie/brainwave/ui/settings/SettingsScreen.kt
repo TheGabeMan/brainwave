@@ -48,6 +48,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.gabrie.brainwave.mail.MailHandoff
+import dev.gabrie.brainwave.settings.MailMethod
+import dev.gabrie.brainwave.settings.AppSettings
+import androidx.compose.ui.platform.LocalContext
 import dev.gabrie.brainwave.settings.NoteLanguage
 import dev.gabrie.brainwave.ui.components.rememberCalendarActions
 import dev.gabrie.brainwave.settings.SmtpSecurity
@@ -65,8 +69,14 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val calendar = rememberCalendarActions()
 
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.messageFlow.collect { snackbarHostState.showSnackbar(it) }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.handoffFlow.collect { request ->
+            if (!MailHandoff.launch(context, request)) snackbarHostState.showSnackbar("No mail app found on this phone.")
+        }
     }
 
     Scaffold(
@@ -102,72 +112,34 @@ fun SettingsScreen(
             )
 
             HorizontalDivider()
-            SectionHeader("Outgoing mail (SMTP)")
-            Text(
-                text = "With Gmail, use smtp.gmail.com and an app password — not your normal password.",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            OutlinedTextField(
-                value = settings.smtpHost,
-                onValueChange = { value -> viewModel.edit { it.copy(smtpHost = value) } },
-                label = { Text("SMTP host") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
+            SectionHeader("Sending email")
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SmtpSecurity.entries.forEachIndexed { index, security ->
+                MailMethod.entries.forEachIndexed { index, method ->
                     SegmentedButton(
-                        selected = settings.smtpSecurity == security,
-                        onClick = { viewModel.setSmtpSecurity(security) },
-                        shape = SegmentedButtonDefaults.itemShape(index, SmtpSecurity.entries.size),
-                        label = { Text(security.label()) },
+                        selected = settings.mailMethod == method,
+                        onClick = { viewModel.edit { it.copy(mailMethod = method) } },
+                        shape = SegmentedButtonDefaults.itemShape(index, MailMethod.entries.size),
+                        label = { Text(method.label) },
                     )
                 }
             }
 
-            OutlinedTextField(
-                value = settings.smtpPort.toString(),
-                onValueChange = { value ->
-                    value.toIntOrNull()?.let { port -> viewModel.edit { it.copy(smtpPort = port) } }
-                },
-                label = { Text("Port") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            OutlinedTextField(
-                value = settings.smtpUsername,
-                onValueChange = { value -> viewModel.edit { it.copy(smtpUsername = value) } },
-                label = { Text("Username") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            SecretField(
-                value = form.smtpPassword,
-                onValueChange = viewModel::setSmtpPassword,
-                label = "Password or app password",
-            )
-
-            OutlinedTextField(
-                value = settings.fromAddress,
-                onValueChange = { value -> viewModel.edit { it.copy(fromAddress = value) } },
-                label = { Text("From address (defaults to the username)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Button(
-                onClick = viewModel::sendTestEmail,
-                enabled = !form.testing,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(if (form.testing) "Sending…" else "Send test email")
+            if (settings.mailMethod == MailMethod.MAIL_APP) {
+                Text(
+                    text = "Brainwave opens your mail app with the message and the recording " +
+                        "already filled in, and you tap Send. No password or server details needed, " +
+                        "but it is one tap per email — and it only goes out when you do.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = viewModel::sendTestEmail,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Open mail app with a test message")
+                }
+            } else {
+                SmtpSettings(settings = settings, form = form, viewModel = viewModel)
             }
 
             HorizontalDivider()
@@ -453,5 +425,80 @@ private fun SpeechModelRow(
                 Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text("Try again") }
             }
         }
+    }
+}
+
+
+/** The SMTP-only fields: the server, the account, and the test button. */
+@Composable
+private fun SmtpSettings(settings: AppSettings, form: SettingsForm, viewModel: SettingsViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Brainwave sends the email itself, in the background, with your own mail account. " +
+                "With Gmail, use smtp.gmail.com and an app password — not your normal password.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+            OutlinedTextField(
+                value = settings.smtpHost,
+                onValueChange = { value -> viewModel.edit { it.copy(smtpHost = value) } },
+                label = { Text("SMTP host") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SmtpSecurity.entries.forEachIndexed { index, security ->
+                SegmentedButton(
+                    selected = settings.smtpSecurity == security,
+                    onClick = { viewModel.setSmtpSecurity(security) },
+                    shape = SegmentedButtonDefaults.itemShape(index, SmtpSecurity.entries.size),
+                    label = { Text(security.label()) },
+                )
+                }
+            }
+
+            OutlinedTextField(
+                value = settings.smtpPort.toString(),
+                onValueChange = { value ->
+                value.toIntOrNull()?.let { port -> viewModel.edit { it.copy(smtpPort = port) } }
+                },
+                label = { Text("Port") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            OutlinedTextField(
+                value = settings.smtpUsername,
+                onValueChange = { value -> viewModel.edit { it.copy(smtpUsername = value) } },
+                label = { Text("Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            SecretField(
+                value = form.smtpPassword,
+                onValueChange = viewModel::setSmtpPassword,
+                label = "Password or app password",
+            )
+
+            OutlinedTextField(
+                value = settings.fromAddress,
+                onValueChange = { value -> viewModel.edit { it.copy(fromAddress = value) } },
+                label = { Text("From address (defaults to the username)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Button(
+                onClick = viewModel::sendTestEmail,
+                enabled = !form.testing,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (form.testing) "Sending…" else "Send test email")
+            }
     }
 }

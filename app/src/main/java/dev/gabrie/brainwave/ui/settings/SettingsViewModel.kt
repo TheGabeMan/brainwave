@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.gabrie.brainwave.AppContainer
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.mail.OutgoingMail
 import dev.gabrie.brainwave.ai.ModelStatus
 import dev.gabrie.brainwave.settings.AppSettings
+import dev.gabrie.brainwave.settings.MailMethod
 import dev.gabrie.brainwave.settings.NoteLanguage
 import dev.gabrie.brainwave.settings.SecretStore
 import dev.gabrie.brainwave.settings.SmtpSecurity
@@ -49,6 +51,10 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun downloadModel(language: NoteLanguage) = container.speechModels.download(language)
 
     fun cancelModelDownload(language: NoteLanguage) = container.speechModels.cancel(language)
+
+    /** The test message for the mail-app method, which only a screen can open. */
+    private val handoffs = Channel<MailHandoff.Request>(Channel.BUFFERED)
+    val handoffFlow = handoffs.receiveAsFlow()
 
     private val messages = Channel<String>(Channel.BUFFERED)
     val messageFlow = messages.receiveAsFlow()
@@ -134,6 +140,24 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
     fun sendTestEmail() {
         viewModelScope.launch {
             val state = _form.value
+
+            if (state.settings.mailMethod == MailMethod.MAIL_APP) {
+                if (state.settings.recipientEmail.isBlank()) {
+                    messages.send("Fill in the recipient email first.")
+                } else {
+                    handoffs.send(
+                        MailHandoff.Request(
+                            OutgoingMail(
+                                subject = "[brainwave] Test email",
+                                text = "If you are reading this, Brainwave can hand mail to your mail app.",
+                            ),
+                            state.settings.recipientEmail,
+                        )
+                    )
+                }
+                return@launch
+            }
+
             if (!state.settings.mailConfigured) {
                 messages.send("Fill in the SMTP host, the sender and the recipient first.")
                 return@launch

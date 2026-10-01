@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.gabrie.brainwave.AppContainer
 import dev.gabrie.brainwave.audio.AudioPlayer
 import dev.gabrie.brainwave.data.Brainwave
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.ui.container
 import dev.gabrie.brainwave.util.Time
 import java.io.File
@@ -58,6 +59,10 @@ class DetailViewModel(
 
     private val messages = Channel<String>(Channel.BUFFERED)
     val messageFlow = messages.receiveAsFlow()
+
+    /** "Save & email" through the mail app: only a screen can open another app. */
+    private val handoffs = Channel<MailHandoff.Request>(Channel.BUFFERED)
+    val handoffFlow = handoffs.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -121,7 +126,14 @@ class DetailViewModel(
             container.repository.find(original.id)?.let { fresh ->
                 _uiState.update { it.copy(original = fresh) }
             }
-            messages.send(if (resendEmail) "Saved — re-sending the email." else "Saved.")
+            val settings = container.settingsRepository.current()
+            when {
+                resendEmail && settings.sendsAutomatically -> messages.send("Saved — re-sending the email.")
+                resendEmail && settings.handsOffToMailApp ->
+                    container.coordinator.noteHandoff(original.id)?.let { handoffs.send(it) }
+                resendEmail -> messages.send("Saved. Set up email in Settings to send it.")
+                else -> messages.send("Saved.")
+            }
         }
     }
 

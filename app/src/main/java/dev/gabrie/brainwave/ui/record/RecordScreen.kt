@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.gabrie.brainwave.mail.MailHandoff
 import dev.gabrie.brainwave.ui.components.DueDateSection
 import dev.gabrie.brainwave.ui.components.rememberCalendarActions
 import dev.gabrie.brainwave.ui.home.PulsingMicIndicator
@@ -82,7 +84,16 @@ fun RecordScreen(
     }
 
     LaunchedEffect(state.saved) {
-        if (state.saved) onDone()
+        if (state.saved) {
+            // Open the mail app first, then leave: the user lands back on the
+            // list when they return from sending.
+            state.handoff?.let { request ->
+                if (!MailHandoff.launch(context, request)) {
+                    Toast.makeText(context, "No mail app found on this phone.", Toast.LENGTH_LONG).show()
+                }
+            }
+            onDone()
+        }
     }
 
     Scaffold(

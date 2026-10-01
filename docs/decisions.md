@@ -352,3 +352,38 @@ Central, which F-Droid allows for FLOSS binaries.
   accepted, so phones upgraded from a bundled build do not re-download.
 - Changing a model means changing its catalogue entry; the new hash makes the old copy
   stale and it is fetched again.
+
+---
+
+## 18. Email goes by SMTP *or* the phone's mail app — **user choice**, SMTP the default
+
+*Decided 2026-10-01.*
+
+**Decision.** A setting, `MailMethod`, chooses how email leaves the phone: **SMTP** (the
+default; the app sends it itself, in the background) or **Mail app** (`MailHandoff` opens
+the phone's mail app with the recipient, subject, text and recording filled in; the user
+taps Send). SMTP stays the default, as the owner asked.
+
+**Why.** SMTP needs server details and, for Gmail, an app password — the hardest step for a
+family member installing the app. The mail-app route needs only a recipient address. It cannot
+replace SMTP, because Android has no way to send through another app without the user
+seeing it, so it costs a tap per email and cannot run in the background; hence a choice,
+not a swap. This was the "SMTP with fallback" option from the start of the project, now
+as an explicit setting.
+
+**Rejected.** *Fall back to the mail app automatically when SMTP is unset.* Considered; the
+owner chose an explicit setting. The consequence is deliberate: SMTP chosen but unconfigured
+means **no email**, not a silent switch of method (`MailMethodTest` pins this).
+
+**Consequences.**
+- Hand-off must be launched from a foreground screen; the coordinator only builds the
+  request (`noteHandoff` / `listHandoff`). Record, Detail ("Save & email"), Home (whole list)
+  and Settings (test message) each launch it.
+- Only email apps are offered. An intent *selector* does this; a MIME type does not (see
+  CLAUDE.md) — found on a device, where the first version offered Signal and WhatsApp.
+- The recording is copied to a short-lived share folder under a friendly name
+  (`AttachmentStaging`) and shared as a `content://` URI through `FileProvider`, so the mail
+  app sees one file named after the brainwave, not the recordings folder.
+- A hand-off is not a send: the app cannot know whether the user tapped Send, so
+  `noteMailSent` is not set for it.
+- Verified on a phone with Gmail: recipient, subject, body and the `.m4a` arrive filled in.

@@ -8,6 +8,8 @@ import dev.gabrie.brainwave.AppContainer
 import dev.gabrie.brainwave.data.Brainwave
 import dev.gabrie.brainwave.data.BrainwaveRepository
 import dev.gabrie.brainwave.data.SortField
+import dev.gabrie.brainwave.mail.MailHandoff
+import dev.gabrie.brainwave.settings.MailMethod
 import dev.gabrie.brainwave.data.SortOrder
 import dev.gabrie.brainwave.ui.container
 import kotlinx.coroutines.channels.Channel
@@ -23,7 +25,7 @@ data class HomeUiState(
     val brainwaves: List<Brainwave> = emptyList(),
     val sortOrder: SortOrder = SortOrder(),
     val showCompleted: Boolean = false,
-    val mailConfigured: Boolean = false,
+    val canEmail: Boolean = false,
     val loaded: Boolean = false,
 )
 
@@ -31,6 +33,10 @@ class HomeViewModel(private val container: AppContainer) : ViewModel() {
 
     private val messages = Channel<String>(Channel.BUFFERED)
     val messageFlow = messages.receiveAsFlow()
+
+    /** Mail-app hand-offs; only a screen can open another app, so the screen launches them. */
+    private val handoffs = Channel<MailHandoff.Request>(Channel.BUFFERED)
+    val handoffFlow = handoffs.receiveAsFlow()
 
     /** Holds the last swipe-deleted brainwave so the snackbar can undo it. */
     private val recentlyDeleted = MutableStateFlow<Brainwave?>(null)
@@ -44,7 +50,7 @@ class HomeViewModel(private val container: AppContainer) : ViewModel() {
             brainwaves = BrainwaveRepository.sort(visible, settings.sortOrder),
             sortOrder = settings.sortOrder,
             showCompleted = settings.showCompleted,
-            mailConfigured = settings.mailConfigured,
+            canEmail = settings.canEmail,
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
@@ -103,12 +109,17 @@ class HomeViewModel(private val container: AppContainer) : ViewModel() {
     fun emailWholeList() {
         viewModelScope.launch {
             val settings = container.settingsRepository.current()
-            if (!settings.mailConfigured) {
-                messages.send("Add SMTP details and a recipient in Settings first.")
-                return@launch
+            when {
+                settings.sendsAutomatically -> {
+                    container.coordinator.sendWholeList()
+                    messages.send("Sending your brainwave list to ${settings.recipientEmail}")
+                }
+                settings.handsOffToMailApp ->
+                    container.coordinator.listHandoff()?.let { handoffs.send(it) }
+                settings.mailMethod == MailMethod.MAIL_APP ->
+                    messages.send("Add a recipient email in Settings first.")
+                else -> messages.send("Add SMTP details and a recipient in Settings first.")
             }
-            container.coordinator.sendWholeList()
-            messages.send("Sending your brainwave list to ${settings.recipientEmail}")
         }
     }
 
