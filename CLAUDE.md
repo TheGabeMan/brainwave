@@ -128,6 +128,14 @@ Each of these cost real time. Do not re-litigate them.
 
 - **`mipmap-anydpi-v26` must keep the `-v26`.** Lint says the qualifier is
   redundant at minSdk 26; removing it breaks resource linking.
+- **The debug build is not minified; the release build is, and they can disagree.**
+  R8 renamed 55 of 63 JNA/Vosk classes, which JNA's native code looks up *by name*, and
+  nothing failed to build: the release APK simply crashed on first transcription (an
+  `UnsatisfiedLinkError` is an `Error`, so the `catch (e: Exception)` blocks never saw it).
+  `proguard-rules.pro` now keeps `com.sun.jna.**` and `org.vosk.**`. After any dependency
+  change, check `app/build/outputs/mapping/release/mapping.txt` for renamed library classes,
+  and **run the release APK on a device before telling anyone it works** — a release build
+  that has only ever compiled has not been tested.
 - **JavaMail on Android needs `JavaMailInit.ensure()`** before the first message,
   or multipart fails at runtime with "no object DCH for MIME type".
 - **Do not weaken the JavaMail ProGuard rules.** R8 will strip the reflectively

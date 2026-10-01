@@ -187,22 +187,36 @@ including 32-bit ARM added 9 MB.
 
 ### Distribute to family
 
-```bash
-./gradlew :app:assembleRelease
-```
+Family members install from a plain download link — no store, no extra app. The step-by-step
+guide, in English and Dutch, is [docs/INSTALL.md](docs/INSTALL.md); send them its link:
 
-Create `keystore.properties` in the repo root (git-ignored):
+> <https://github.com/TheGabeMan/brainwave/releases/latest/download/brainwave.apk>
+
+That URL always serves the newest release, because every release uploads its APK under the
+same file name, `brainwave.apk`.
+
+**Releasing a new version**
+
+1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
+2. Build it signed: `./gradlew :app:assembleRelease` (it signs automatically when
+   `keystore.properties` exists in the repo root; the file is git-ignored — see below).
+3. **Run the release APK on a device.** Debug and release are different builds (release is
+   minified), and a release that has only ever compiled has not been tested.
+4. Tag the commit `vX.Y.Z`, push the tag, and create a GitHub release for it with the APK
+   attached **as `brainwave.apk`**.
+
+`keystore.properties`, in the repo root, is git-ignored:
 
 ```properties
-storeFile=brainwave.jks
+storeFile=/absolute/path/to/brainwave-release.jks
 storePassword=…
 keyAlias=brainwave
 keyPassword=…
 ```
 
-The build picks it up automatically and signs the release APK; share that file
-directly. Keep the keystore safe — losing it means family members must uninstall
-before they can take an update.
+**Keep the keystore somewhere safe and backed up, outside the repository.** Every install is
+verified against it: lose it, or sign a release with a different one, and family members must
+uninstall before they can update — and lose their brainwaves, which live on the phone.
 
 ### F-Droid
 
