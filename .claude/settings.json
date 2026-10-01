@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew *)",
+      "Bash(./scripts/fetch-models.sh)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(adb devices *)",
+      "Bash(adb logcat *)"
+    ]
+  }
+}

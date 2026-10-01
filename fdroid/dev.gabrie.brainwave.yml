@@ -1,0 +1,30 @@
+AntiFeatures:
+  NonFreeNet:
+    en-US: Optional cloud speech-to-text (Groq by default, or any compatible server)
+      and optional Claude API enrichment. Both are off by default; the app works fully
+      without them.
+Categories:
+  - Note
+  - Task
+License: MIT
+SourceCode: https://github.com/TheGabeMan/brainwave
+IssueTracker: https://github.com/TheGabeMan/brainwave/issues
+Changelog: https://github.com/TheGabeMan/brainwave/commits/main
+
+AutoName: Brainwave
+
+RepoType: git
+Repo: https://github.com/TheGabeMan/brainwave.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1

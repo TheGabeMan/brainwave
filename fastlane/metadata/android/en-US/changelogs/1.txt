@@ -1,0 +1,5 @@
+First release.
+
+Record a thought by voice. It is transcribed on the phone, given a title and a due date, and emailed to you with the recording attached. The due date goes into your calendar and a reminder fires when it is due.
+
+English and Dutch. No account, no tracking.

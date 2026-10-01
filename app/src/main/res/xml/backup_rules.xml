@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="file" path="datastore" />
+    <!-- Secrets are sealed with a hardware-backed key that never leaves the
+         device, so a restored copy would be undecryptable garbage. This exclude
+         sits inside the datastore include above, which is what makes it bite. -->
+    <exclude domain="file" path="datastore/secrets.preferences_pb" />
+</full-backup-content>

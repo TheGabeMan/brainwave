@@ -1,0 +1,20 @@
+Brainwave catches a thought before it escapes.
+
+Open the app, hit the big button, and say what is on your mind. Brainwave
+transcribes it, writes a title for you, and looks for a deadline in what you
+said. If it cannot find one, it asks you out loud — and listens for the answer,
+through your headset if you are wearing one.
+
+Every brainwave is then emailed to you with the original recording attached, and
+the due date goes straight into your calendar, so the thought lands in the two
+places you actually look: your inbox and your calendar. Your phone also reminds
+you when the moment arrives.
+
+On the home screen, swipe a brainwave left to complete it or right to delete it,
+sort by due date or title in either direction, and tap one open to edit the text.
+You can also email yourself the whole list in one message.
+
+Brainwave has no accounts, no analytics and no Google Play dependencies.
+Speech recognition runs on the phone itself, from a speech model the app downloads
+once (about 40 MB), so your voice never leaves the phone. The only network calls are to your own SMTP server and — if you
+switch it on — the Claude API for sharper titles and dates.

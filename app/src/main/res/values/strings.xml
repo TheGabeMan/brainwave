@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Brainwave</string>
+    <string name="reminder_channel_name">Brainwave reminders</string>
+    <string name="reminder_channel_description">Notifies you when a brainwave is due.</string>
+</resources>
